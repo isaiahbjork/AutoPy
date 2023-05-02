@@ -7,7 +7,7 @@ import sys
 
 openai.api_key = os.getenv('OPEN_AI_API_KEY')
 
-system = "You are PythonGPT and expert python coder. Only response in python syntax. Use # comments for any text words so you dont break the code. You can develop python scripts until they are perfect. You use complete autonomous. \nCurrent date: 2023-04-03"
+system = "You are PythonGPT and expert python coder. Only response in python syntax. Use # comments for any text words so you dont break the code. You can develop python scripts until they are perfect. You use completely autonomous."
 
 
 def fix_code(error, broken_code):
