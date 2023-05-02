@@ -1,2 +1,2 @@
 # AutoPy
-Self-improving code writer and error checker.
+Self-improving python code writer and error checker.
