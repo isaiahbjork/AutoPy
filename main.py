@@ -4,6 +4,10 @@ import pylint.lint
 from pylint import epylint as lint
 from io import StringIO
 import sys
+import importlib
+import re
+from dotenv import load_dotenv
+load_dotenv()
 
 openai.api_key = os.getenv('OPEN_AI_API_KEY')
 
@@ -18,7 +22,7 @@ def fix_code(error, broken_code):
             "content": system
         }, {
             "role": "user",
-            "content": f"Write python code to solve this error: {error} for this python code:\n{broken_code}\n"
+            "content": f"Write python code to solve this error: {error} for this python code:\n{broken_code}\n, respond in python syntax, if you write a sentence use a #"
         }],
         temperature=0.7,
         max_tokens=1000,
@@ -27,7 +31,15 @@ def fix_code(error, broken_code):
         presence_penalty=0,
         frequency_penalty=0)
     code = response.choices[0].message.content
-    code = code.replace("`", "")
+    # Get the index of the desired word in the list
+    index = code.index("`python")
+
+    # Slice the list to remove everything before the desired word
+    new_words = code[index:]
+
+    # Join the list back into a string
+    code = " ".join(new_words)
+   
     return code
 
 
@@ -39,7 +51,7 @@ def generate_code(prompt):
             "content": system
         }, {
             "role": "user",
-            "content": f"Write python code for:\n{prompt}\n"
+            "content": f"Write python code for, respond in python syntax, if you write a sentence use a #:\n{prompt}\n"
         }],
         temperature=0.7,
         max_tokens=1000,
@@ -48,17 +60,24 @@ def generate_code(prompt):
         presence_penalty=0,
         frequency_penalty=0)
     code = response.choices[0].message.content
-    code = code.replace("`", "")
+    # Get the index of the first occurrence of "```python"
+    start_index = code.index("```python") + len("```python") + 1
+
+    # Get the index of the last occurrence of "```"
+    end_index = code.rindex("```")
+
+    # Extract the Python code between the start and end indices
+    code = code[start_index:end_index]
     return code
 
 
 # Define the prompt for which to generate code
-prompt = "print through a list from 1 to 20 one at a time and at the end print finished."
+prompt = "Generate a plot of sin(x) and cos(x) from 0 to 2*pi using matplotlib, with a legend and axis labels."
 
 while True:
     # Generate code based on the prompt
     code = generate_code(prompt)
-    print("Generated code:", code)
+    print("Code Generated")
 
     # Write the generated code to a Python file
     with open("generated_code.py", "w") as f:
@@ -72,10 +91,17 @@ while True:
         break
     except Exception as e:
         print("Generated code has an error:", e)
-
         # Use the 'fix_code' function to generate a fixed code snippet
         fixed_code = fix_code(str(e), code)
         print("Fixed code:", fixed_code)
+        # Parse the fixed code for import statements
+        imports = re.findall(r"import (\w+)", fix_code)
+        for package in imports:
+            try:
+                importlib.import_module(package)
+            except ImportError:
+                print(f"Package '{package}' is not installed. Installing...")
+                os.system(f"pip install {package}")
 
         # Write the fixed code to a Python file
         with open("fixed_code.py", "w") as f:
@@ -90,5 +116,6 @@ while True:
         except Exception as e:
             print("Fixed code has an error:", e)
             continue
+
 
 print("Done!")
