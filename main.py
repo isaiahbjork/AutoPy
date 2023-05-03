@@ -31,15 +31,14 @@ def fix_code(error, broken_code):
         presence_penalty=0,
         frequency_penalty=0)
     code = response.choices[0].message.content
-    # Get the index of the desired word in the list
-    index = code.index("`python")
+    # Get the index of the first occurrence of "```python"
+    start_index = code.index("```python") + len("```python") + 1
 
-    # Slice the list to remove everything before the desired word
-    new_words = code[index:]
+    # Get the index of the last occurrence of "```"
+    end_index = code.rindex("```")
 
-    # Join the list back into a string
-    code = " ".join(new_words)
-   
+    # Extract the Python code between the start and end indices
+    code = code[start_index:end_index]
     return code
 
 
