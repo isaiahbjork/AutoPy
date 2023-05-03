@@ -6,6 +6,7 @@ Self-improving python code writer and error checker.
 
 - Write python code until error-free.
 - Auto-installs necessary packages during testing.
+- Use langchain and vector database to write more robust python code. (In-Progress)
 
 ## Run AutoPy
 
