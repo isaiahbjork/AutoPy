@@ -14,20 +14,24 @@ Self-improving python code writer and error checker.
 ```python
 pip install openai
 ```
+2. Create .env file and add your API Key
+```env
+OPEN_AI_API_KEY=
+```
 
-2. Run Code
+3. Run Code
 
 ```bash
 python main.py
 ```
 
-3. Enter Desired Code
+4. Enter Desired Code
 
 ```
 What do you want AutoPy to build:
 ```
 
-4. Test Code
+5. Test Code
 
 ```bash
 python code.py
