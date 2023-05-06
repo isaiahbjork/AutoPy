@@ -39,7 +39,7 @@ What do you want AutoPy to build:
 python code.py
 ```
 
-Note: if you need an API for your generated code give the key in the prompt and it will add it in the code for you.
+Note: if you need an API for your generated code give the key in the prompt and it will add it in the code for you. Some packages won't install properly so you may have to run this in a python environment.
 
 ## Example Video
 
