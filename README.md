@@ -7,6 +7,7 @@ Self-improving python code writer and error checker.
 - Write python code until error-free.
 - Auto-installs necessary packages during testing.
 - Use langchain and vector database to write more robust python code. (In-Progress)
+- Get package information from PyPi and Github to make sure code is written correctly. (In-Progress)
 
 ## Run AutoPy
 
@@ -36,7 +37,7 @@ What do you want AutoPy to build:
 5. Test Code
 
 ```bash
-python code.py
+python output.py
 ```
 
 Note: if you need an API for your generated code give the key in the prompt and it will add it in the code for you. Some packages won't install properly so you may have to run this in a python environment.

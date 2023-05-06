@@ -128,7 +128,7 @@ while True:
             print("I generated the code.")
 
             # Write the generated code to a Python file
-            with open('code.py', "w") as f:
+            with open('output.py', "w") as f:
                 f.write(code)
 
             # Check if the generated code is error-free
