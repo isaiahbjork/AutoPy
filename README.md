@@ -15,9 +15,10 @@ Self-improving python code writer and error checker.
 ```python
 pip install openai
 ```
-2. Create .env file and add your API Key
+2. Create .env file and add your API Key & Model
 ```env
 OPEN_AI_API_KEY=
+MODEL=
 ```
 
 3. Run Code
