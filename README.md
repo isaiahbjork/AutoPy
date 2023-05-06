@@ -10,10 +10,10 @@ Self-improving python code writer and error checker.
 
 ## Run AutoPy
 
-1. Install OpenAI Python SDK
+1. Install Requirements
 
 ```python
-pip install openai
+pip install -r requirements.txt 
 ```
 2. Create .env file and add your API Key & Model
 ```env
