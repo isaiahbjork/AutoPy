@@ -1,0 +1,13 @@
+Write a Python function called 'two_sum' that takes a list of integers 'nums' and a single integer 'target'. The function should return the indices of the two numbers in 'nums' that add up to the 'target'. Assume that there is exactly one solution, and each element can be used only once. The function should work efficiently with a time complexity of less than O(n^2), ideally O(n).
+
+Here are some example inputs and outputs:
+
+- If 'nums' is [2,7,11,15] and 'target' is 9, the function should return [0,1] because nums[0] + nums[1] == 9.
+- For 'nums' [3,2,4] and 'target' 6, the correct output is [1,2].
+- When 'nums' is [3,3] and 'target' is 6, the function should return [0,1].
+
+The function must adhere to the following constraints:
+- The length of 'nums' is between 2 and 10^4.
+- Each element of 'nums' is an integer between -10^9 and 10^9.
+- The 'target' is an integer between -10^9 and 10^9.
+- There is exactly one valid answer for the given 'nums' and 'target'.

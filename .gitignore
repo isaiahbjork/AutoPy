@@ -1,3 +1,6 @@
 .env
 code.py
 env
+output
+__pycache__
+.ds_store

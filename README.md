@@ -11,6 +11,7 @@ Self-improving python code writer and error checker.
 
 ## Run AutoPy
 
+Create Virtual Environment
 1. Install Requirements
 
 ```python
@@ -39,6 +40,9 @@ What do you want AutoPy to build:
 ```bash
 python output.py
 ```
+
+## Examples
+The example folder has examples of LeetCode problems that it was able to successfully solve. It is still a work in-progress.
 
 Note: if you need an API for your generated code give the key in the prompt and it will add it in the code for you. Some packages won't install properly so you may have to run this in a python environment.
 

@@ -1,185 +1,154 @@
 import os
-import openai
-from pylint import epylint as lint
-from io import StringIO
+import subprocess
 import importlib
 import re
-from dotenv import load_dotenv
-load_dotenv()
-
-openai.api_key = os.getenv('OPEN_AI_API_KEY')
-model = os.getenv('MODEL')
-system = "You are PythonGPT and expert python coder. Only respond in python syntax. Use # comments for any text words so you dont break the code. You can develop python scripts until they are perfect. You use completely autonomy."
-
-
-def generate_code(prompt):
-    print('I am writing the code.')
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=[{
-            "role": "system",
-            "content": system
-        }, {
-            "role": "user",
-            "content": f"Respond in python syntax, if you write a sentence use a # at the start of it so code doesn't break., Write python complete code, including all necessary functions for:\n{prompt}\n"
-        }],
-        temperature=0.7,
-        max_tokens=2500,
-        stop=None,
-        n=1,
-        presence_penalty=0,
-        frequency_penalty=0)
-    code = response.choices[0].message.content
-    # Get the index of the first occurrence of "```python"
-    try:
-        start_index = code.index("```python") + len("```python") + 1
-
-        # Get the index of the last occurrence of "```"
-        end_index = code.rindex("```")
-
-        # Extract the Python code between the start and end indices
-        code = code[start_index:end_index]
-        return code
-    except ValueError:
-        print("I had an problem parsing the code so it might contain errors.")
-        return code
+from generate_code import generate_code
+from fix_code import fix_code
+from improve_code import improve_code
+from create_testing_code import create_testing_code
+from check_syntax import check_syntax
+from check_code import check_code
+import json
 
 
-def fix_code(error, broken_code):
-    print('I am fixing code.')
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=[{
-            "role": "system",
-            "content": system
-        }, {
-            "role": "user",
-            "content": f"Write python code to solve this error: {error} for this python code:\n{broken_code}\n, respond in python syntax, if you write a sentence use a # at the start of it so code doesn't break."
-        }],
-        temperature=0.7,
-        max_tokens=1000,
-        stop=None,
-        n=1,
-        presence_penalty=0,
-        frequency_penalty=0)
-    code = response.choices[0].message.content
-    try:
-        start_index = code.index("```python") + len("```python") + 1
-
-        # Get the index of the last occurrence of "```"
-        end_index = code.rindex("```")
-
-        # Extract the Python code between the start and end indices
-        code = code[start_index:end_index]
-        return code
-    except ValueError:
-        print("I had an problem parsing the code so it might contain errors.")
-        return code
+def install_missing_packages(imports):
+    for package in imports:
+        try:
+            importlib.import_module(package)
+        except ImportError:
+            print(f"Package '{package}' is not installed. Installing...")
+            os.system(f"pip install {package}")
 
 
-def improve_code(code):
-    print('I am improving the code.')
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=[{
-            "role": "system",
-            "content": system
-        }, {
-            "role": "user",
-            "content": f"Respond in python syntax, if you write a sentence use a # at the start of it so code doesn't break., Write python complete code, including all necessary functions for, you need to improve this code to run perfectly if it doesn't already:\n{code}\n"
-        }],
-        temperature=0.7,
-        max_tokens=2500,
-        stop=None,
-        n=1,
-        presence_penalty=0,
-        frequency_penalty=0)
-    code = response.choices[0].message.content
-    # Get the index of the first occurrence of "```python"
-    try:
-        start_index = code.index("```python") + len("```python") + 1
+def write_code_to_file(code, file_path):
+    with open(file_path, "w") as f:
+        f.write(code)
 
-        # Get the index of the last occurrence of "```"
-        end_index = code.rindex("```")
 
-        # Extract the Python code between the start and end indices
-        code = code[start_index:end_index]
-        return code
-    except ValueError:
-        print("I had an problem parsing the code so it might contain errors.")
-        return code
+def generate_and_test_code(prompt):
+    while True:
+        try:
+            code = generate_code(prompt)
+            imports = re.findall(r"(?:import|from) (\w+)", code)
+            install_missing_packages(imports)
+            print("I generated the code.")
+
+            write_code_to_file(code, "output/output.py")
+            syntax = check_syntax(code)
+            print("Code Syntax", syntax)
+
+            if syntax == True:
+                testing_code = create_testing_code(code)
+                test_syntax = check_syntax(testing_code)
+                print("Testing Syntax", test_syntax)
+
+                write_code_to_file(testing_code, "output/test_output.py")
+
+                try:
+                    test_script_path = os.path.join("output", "test_output.py")
+                    result = subprocess.run(
+                        ["python", test_script_path], capture_output=True, text=True
+                    )
+                    if result.returncode == 0:
+                        print("Tests passed successfully.")
+                        break
+                    else:
+                        print("Tests failed.")
+                        print(result.stdout)
+                        print(result.stderr)
+                        testing_code = create_testing_code(
+                            "Rewrite the testing code for this prompt there is a testing error: "
+                            + "prompt: "
+                            + prompt
+                            + " Error: \n"
+                            + f"{result.stdout}\n {result.stderr}"
+                            + " Here is the code: "
+                            + code
+                            + " \n Here is the testing code: "
+                            + testing_code
+                        )
+                        write_code_to_file(testing_code, "output/test_output.py")
+                        continue
+
+                except Exception as test_exec_exception:
+                    print(
+                        "I wrote testing code that has this error during execution:",
+                        test_exec_exception,
+                    )
+                    testing_code = create_testing_code(
+                        "Rewrite the testing code for this prompt there is a runtime error: "
+                        + prompt
+                        + "error: "
+                        + str(test_exec_exception)
+                        + " Here is the code: "
+                        + code
+                        + " /n Here is the testing code: "
+                        + testing_code
+                    )
+                    write_code_to_file(testing_code, "output/test_output.py")
+                    continue
+            else:
+                code = generate_code(
+                    "Rewrite the code for this prompt there is a syntax error: "
+                    + prompt
+                    + "error: "
+                    + syntax
+                    + " Here is the code: "
+                    + code
+                )
+                continue
+
+        except Exception as main_exception:
+            print("I wrote code that has this error:", main_exception)
+            fixed_code = fix_code(
+                str(main_exception),
+                "Rewrite the code for this prompt there is an error: " + prompt + code,
+            )
+
+            write_code_to_file(fixed_code, "output/output.py")
+            print("I am testing the fixed code.")
+            try:
+                testing_code = create_testing_code(
+                    "Rewrite the code for this prompt there is a syntax error: "
+                    + fixed_code
+                )
+                write_code_to_file(testing_code, "output/test_output.py")
+
+                print("Fixed code execution and testing complete.")
+                continue
+
+            except Exception as fix_exception:
+                print("The fixed code still has errors:", fix_exception)
+                continue
 
 
 # Define the prompt for which to generate code
-while True:
-    try:
-        # Generate code based on the prompt
-        prompt = input('What do you want AutoPy to build: ')
-        while True:
-            code = generate_code(prompt)
-            imports = re.findall(r"(?:import|from) (\w+)", code)
-            for package in imports:
-                try:
-                    importlib.import_module(package)
-                except ImportError:
-                    print(
-                        f"Package '{package}' is not installed. Installing...")
-                    os.system(f"pip install {package}")
-            print("I generated the code.")
+prompt = """
+class Solution:
+    def longestPalindrome(self, s: str) -> str:
+        
+Given a string s, return the longest 
+palindromic
+substring
+ in s.
 
-            # Write the generated code to a Python file
-            with open('output.py', "w") as f:
-                f.write(code)
+ 
 
-            # Check if the generated code is error-free
-            stdout, stderr = StringIO(), StringIO()
-            try:
-                print('I am testing the code.')
-                exec(code)
-                improve = improve_code(code)
-                try:
-                    exec(improve)
-                except Exception as fix_exception:
-                    print("I wrote code that has this error:", fix_exception)
+Example 1:
 
-                    fixed_code = fix_code(str(fix_exception), code)
-                    continue
-                print("I wrote error free code.")
-                break
-            except Exception as main_exception:
-                print("I wrote code that has this error:", main_exception)
-                fixed_code = fix_code(str(main_exception), code)
+Input: s = "babad"
+Output: "bab"
+Explanation: "aba" is also a valid answer.
+Example 2:
 
-                # Use the 'fix_code' function to generate a fixed code snippet
-                print("I fixed the code for errors.")
-                imports = re.findall(r"(?:import|from) (\w+)", fixed_code)
-                for package in imports:
-                    try:
-                        importlib.import_module(package)
-                    except ImportError:
-                        print(
-                            f"Package '{package}' is not installed. Installing...")
-                        os.system(f"pip install {package}")
+Input: s = "cbbd"
+Output: "bb"
+ 
 
-                # Evaluate the fixed code snippet to see if it works
-                print("I am testing the fixed code.")
-                try:
-                    exec(fixed_code)
-                    improve = improve_code(fixed_code)
-                    try:
-                        exec(improve)
-                    except Exception as fix_exception:
-                        print("I wrote code that has this error:", fix_exception)
+Constraints:
 
-                        fixed_code = fix_code(str(fix_exception), improve)
-                        continue
-                    print("I wrote error-free code!")
-                    break
-                except Exception as fix_exception:
-                    print("I wrote code that has this error:", fix_exception)
+1 <= s.length <= 1000
+s consist of only digits and English letters.
+"""
 
-                    fixed_code = fix_code(str(fix_exception), fixed_code)
-                    continue
-    except Exception as e:
-        print('I had an error writing the code. I will rewrite it.')
-        continue
+generate_and_test_code(prompt)
